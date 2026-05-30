@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chauhan Advisory – Reminders</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-main">CHAUHAN ADVISORY</span>
+        <span class="brand-sub">Insurance Reminders</span>
+      </div>
+      <div class="header-right">
+        <span class="header-date" id="header-date"></span>
+        <button class="btn-refresh" id="btn-refresh" title="Refresh">&#8635;</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <div class="stats-strip">
+      <div class="stat-box">
+        <span class="stat-num" id="stat-total">—</span>
+        <span class="stat-label">Today</span>
+      </div>
+      <div class="stat-box stat-urgent">
+        <span class="stat-num" id="stat-overdue">—</span>
+        <span class="stat-label">Overdue</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" id="stat-birthdays">—</span>
+        <span class="stat-label">Birthdays</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" id="stat-festivals">—</span>
+        <span class="stat-label">Festivals</span>
+      </div>
+    </div>
+
+    <div class="filter-row" id="filter-row">
+      <button class="chip active" data-filter="all">All</button>
+      <button class="chip" data-filter="lic">LIC</button>
+      <button class="chip" data-filter="star">Star Health</button>
+      <button class="chip" data-filter="premium">Premium</button>
+      <button class="chip" data-filter="birthday">Birthday</button>
+      <button class="chip" data-filter="festival">Festival</button>
+      <button class="chip" data-filter="overdue">Overdue</button>
+    </div>
+
+    <div class="status-msg" id="status-msg"></div>
+    <div class="cards-container" id="cards-container"></div>
+
+  </main>
+
+  <script src="helplines.js"></script>
+  <script src="messages.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
