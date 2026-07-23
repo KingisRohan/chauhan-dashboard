@@ -51,6 +51,35 @@ tr.rdone{opacity:.55}
 .note{font-size:11px;color:#8a93a0;max-width:220px;white-space:normal}
 .foot{color:#8a93a0;font-size:11.5px;margin-top:12px;line-height:1.6}
 .count{font-size:12.5px;color:#556;margin:2px 0 8px}
+
+/* ---- premium notice modal ---- */
+a.cname{color:#0b3d66;font-weight:600;text-decoration:none;cursor:pointer;border-bottom:1px dotted #9bb3cc}
+a.cname:hover{color:#0a56a8}
+#noticeModal{position:fixed;inset:0;background:rgba(20,30,45,.55);display:none;z-index:50;overflow:auto;padding:24px}
+#noticeCard{background:#fff;max-width:640px;margin:0 auto;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden}
+.nHead{background:#0b3d66;color:#fff;padding:18px 24px}
+.nHead .brand{font-size:19px;font-weight:700;letter-spacing:.3px}
+.nHead .sub{font-size:12px;opacity:.85;margin-top:2px}
+.nBody{padding:22px 24px}
+.nTitle{font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#0b3d66;border-bottom:2px solid #0b3d66;padding-bottom:6px;margin-bottom:14px}
+.nRow{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:#33404f}
+.nRow b{color:#1a2230}
+.nTable{margin:16px 0;border:1px solid #e2e7ee;border-radius:8px;overflow:hidden}
+.nTable .tr{display:flex;justify-content:space-between;padding:9px 14px;font-size:13.5px;border-bottom:1px solid #eef1f5}
+.nTable .tr:last-child{border-bottom:0}
+.nTable .tr.tot{background:#eef6ef;font-weight:700;font-size:15px;color:#0a7c3a}
+.nTable .tr.fee{color:#8a4b00}
+.nNote{font-size:11px;color:#7a828f;line-height:1.6;margin-top:12px}
+.mbtns{display:flex;gap:10px;justify-content:flex-end;padding:16px 24px;background:#f7f9fb;border-top:1px solid #eef1f5}
+.btn{border:0;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer}
+.btn.p{background:#0b3d66;color:#fff}
+.btn.s{background:#e7ecf2;color:#33404f}
+@media print{
+ body>.wrap{display:none!important}
+ #noticeModal{display:block!important;position:static;background:#fff;padding:0}
+ #noticeCard{box-shadow:none;max-width:100%}
+ .mbtns,.mclose{display:none!important}
+}
 </style>
 </head>
 <body>
@@ -167,7 +196,7 @@ function render(){
   const rdone=(st.status==='Paid/Done'||st.status==='Closed')?'rdone':'';
   return '<tr class="'+rdone+'">'+
    '<td><select class="cs '+cls+'" data-p="'+r.policy_number+'">'+opts+'</select></td>'+
-   '<td>'+(r.name||'—')+' '+statusBadgeMini(r)+'</td>'+
+   '<td><a class="cname" data-p="'+r.policy_number+'">'+(r.name||'—')+'</a></td>'+
    '<td>'+phoneCell(r)+'</td>'+
    '<td>'+r.policy_number+flagPill(r)+'</td>'+
    '<td>'+r.plan+'</td>'+
@@ -220,7 +249,67 @@ document.getElementById('foot').innerHTML=
  '<b>LIC printed</b> = outstanding as printed on the most recent monthly Premium Due List. '+
  'Policies flagged <span class="pill mt">matures</span>/<span class="pill lp">last prem</span> need only one final premium. '+
  'Long-term lapsed policies not in current LIC due-lists are shown for follow-up but arrears should be reconfirmed with LIC (revival rules & interest apply). '+'<br><b>WhatsApp →</b> opens a ready-to-send personalised message (free, no API needed) — just press send.';
+
+// ---- Premium / revival notice ----
+var AS_OF = new Date(2026,6,9);              // as-of date used for arrears + late fee
+var LIC_RATE = 0.095;                        // LIC delayed-premium interest p.a. (resets each May) — edit if LIC revises
+var HALF = LIC_RATE/2;                        // compounded half-yearly
+var BYPOL = {}; DATA.forEach(function(r){ BYPOL[r.policy_number]=r; });
+var STEPM = {'Half-yearly':6,'Yearly':12,'Quarterly':3,'Monthly':1};
+function lateFee(r){
+  if(r.arrears_today==null || !r.fup || !r.installments_due) return 0;
+  var step = STEPM[r.frequency]||6;
+  var parts = r.fup.split('/'); var fm=+parts[0], fy=+parts[1];
+  var fee=0;
+  for(var k=0;k<r.installments_due;k++){
+    var idx=(fy*12+(fm-1))+k*step;           // month index of this installment's due date
+    var months=(AS_OF.getFullYear()*12+AS_OF.getMonth()) - idx;
+    if(months<=0) continue;                  // within grace / not overdue
+    var halfYears=months/6;
+    fee += r.inst_premium*(Math.pow(1+HALF,halfYears)-1);
+  }
+  return Math.round(fee);
+}
+function openNotice(pol){
+  var r=BYPOL[pol]; if(!r) return;
+  var fee=lateFee(r);
+  var arr=r.arrears_today||0;
+  var total=arr+fee;
+  var b=document.getElementById('nBody');
+  var dstr=AS_OF.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  b.innerHTML=
+   '<div class="nTitle">Premium Due / Revival Notice</div>'+
+   '<div class="nRow"><span>Date</span><b>'+dstr+'</b></div>'+
+   '<div class="nRow"><span>Policyholder</span><b>'+(r.name||'—')+'</b></div>'+
+   '<div class="nRow"><span>Policy No.</span><b>'+r.policy_number+'</b></div>'+
+   '<div class="nRow"><span>Plan</span><b>'+r.plan+'</b></div>'+
+   '<div class="nRow"><span>Payment mode</span><b>'+r.frequency+'</b></div>'+
+   '<div class="nRow"><span>Premium pending since</span><b>'+(r.fup||'—')+'</b></div>'+
+   '<div class="nRow"><span>Installments overdue</span><b>'+(r.installments_due||'—')+'</b></div>'+
+   '<div class="nTable">'+
+     '<div class="tr"><span>Premium arrears ('+(r.installments_due||0)+' &times; ₹'+Number(r.inst_premium).toLocaleString("en-IN")+')</span><b>₹'+arr.toLocaleString("en-IN")+'</b></div>'+
+     '<div class="tr fee"><span>Late fee &mdash; interest @9.5% p.a. (compounded half-yearly)</span><b>₹'+fee.toLocaleString("en-IN")+'</b></div>'+
+     '<div class="tr tot"><span>Total payable</span><span>₹'+total.toLocaleString("en-IN")+'</span></div>'+
+   '</div>'+
+   '<div class="nNote">Late fee is interest on overdue premium as per LIC&rsquo;s delayed-payment rate (9.5% p.a., compounded half-yearly), calculated from each premium&rsquo;s due date to '+dstr+'. This is an estimate for reference &mdash; the exact amount is confirmed by LIC at the time of payment. A lapsed policy can be revived within 5 years of the first unpaid premium, subject to LIC requirements. For assistance contact Chauhan Advisory.</div>';
+  document.getElementById('noticeModal').style.display='block';
+}
+function closeNotice(){ document.getElementById('noticeModal').style.display='none'; }
+document.getElementById('noticeModal').addEventListener('click',function(e){ if(e.target.id==='noticeModal') closeNotice(); });
+function bindNames(){ document.querySelectorAll('a.cname').forEach(function(a){ a.onclick=function(){ openNotice(a.dataset.p); }; }); }
+var _origRender=render;
+render=function(){ _origRender(); bindNames(); };
+
 updateCards();render();
 </script>
+
+<div id="noticeModal"><div id="noticeCard">
+  <div class="nHead"><div class="brand">CHAUHAN ADVISORY</div><div class="sub">Life Insurance Corporation of India &middot; Agent Code LIC01891914</div></div>
+  <div class="nBody" id="nBody"></div>
+  <div class="mbtns">
+    <button class="btn s mclose" onclick="closeNotice()">Close</button>
+    <button class="btn p" onclick="window.print()">Download / Print</button>
+  </div>
+</div></div>
 </body>
 </html>
