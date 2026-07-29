@@ -114,6 +114,9 @@ a.cname:hover{color:#0a56a8}
 .payUrl{font-size:11px;color:#8a93a0;margin-top:7px}
 .payUrl a{color:#0b66c3;text-decoration:none}
 @media print{.payNow{background:#fff!important;color:#0b3d66!important;border:1.5px solid #0b3d66}}
+.dlbtn{background:#c8952a;color:#fff;border:0;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.dlbtn:hover{background:#b3831f}
+.dlbtn:disabled{opacity:.6;cursor:default}
 </style>
 </head>
 <body>
@@ -146,6 +149,7 @@ a.cname:hover{color:#0a56a8}
 <div class="tablewrap">
 <table id="tbl">
 <thead><tr>
+<th>PDF</th>
 <th data-k="call">Call status</th>
 <th data-k="name">Client</th>
 <th data-k="phone">Phone</th>
@@ -229,6 +233,7 @@ function render(){
   const opts=CS.map(o=>'<option '+(st.status===o?'selected':'')+'>'+(o||'—')+'</option>').join('');
   const rdone=(st.status==='Paid/Done'||st.status==='Closed')?'rdone':'';
   return '<tr class="'+rdone+'">'+
+   '<td><button class="dlbtn" data-p="'+r.policy_number+'" title="Download premium notice PDF">⬇ PDF</button></td>'+
    '<td><select class="cs '+cls+'" data-p="'+r.policy_number+'">'+opts+'</select></td>'+
    '<td><a class="cname" data-p="'+r.policy_number+'">'+(r.name||'—')+'</a></td>'+
    '<td>'+phoneCell(r)+'</td>'+
@@ -363,7 +368,42 @@ function downloadNoticePDF(){
     });
 }
 document.getElementById('noticeModal').addEventListener('click',function(e){ if(e.target.id==='noticeModal') closeNotice(); });
-function bindNames(){ document.querySelectorAll('a.cname').forEach(function(a){ a.onclick=function(){ openNotice(a.dataset.p); }; }); }
+function downloadPolicyPDF(pol){
+  var b=[].slice.call(document.querySelectorAll('.dlbtn')).filter(function(x){return x.dataset.p===pol;})[0];
+  if(b){b.disabled=true;b.textContent='…';}
+  openNotice(pol);                 // populate the notice
+  document.getElementById('noticeModal').style.display='none'; // render off-screen, don't show modal
+  var card=document.getElementById('noticeCard');
+  card.style.position='fixed'; card.style.left='-10000px'; card.style.top='0';
+  document.getElementById('noticeModal').style.display='block';
+  setTimeout(function(){
+    _finishDL(function(){
+      // restore
+      document.getElementById('noticeModal').style.display='none';
+      card.style.position=''; card.style.left=''; card.style.top='';
+      if(b){b.disabled=false;b.textContent='⬇ PDF';}
+    });
+  },250);
+}
+function _finishDL(after){
+  var el=document.getElementById('noticePrintable');
+  var fname='Chauhan_Premium_Notice_'+(_noticeName||'').replace(/[^A-Za-z0-9]+/g,'_')+'.pdf';
+  if(!window.html2pdf){ window.print(); after&&after(); return; }
+  html2pdf().set({margin:0,image:{type:'jpeg',quality:0.98},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
+      jsPDF:{unit:'pt',format:'a4',orientation:'portrait'}})
+    .from(el).outputPdf('blob').then(function(blob){
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download=fname;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){URL.revokeObjectURL(url);a.remove();},2000);
+      after&&after();
+    }).catch(function(e){ window.print(); after&&after(); });
+}
+function bindNames(){
+  document.querySelectorAll('a.cname').forEach(function(a){ a.onclick=function(){ openNotice(a.dataset.p); }; });
+  document.querySelectorAll('button.dlbtn').forEach(function(b){ b.onclick=function(){ downloadPolicyPDF(b.dataset.p); }; });
+}
 var _origRender=render;
 render=function(){ _origRender(); bindNames(); };
 
