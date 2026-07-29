@@ -342,13 +342,25 @@ function openNotice(pol){
 function closeNotice(){ document.getElementById('noticeModal').style.display='none'; }
 var _noticeName='';
 function downloadNoticePDF(){
+  var btn=document.querySelector('.btn.p'); var orig=btn?btn.innerHTML:'';
+  if(btn){btn.innerHTML='Generating PDF…'; btn.style.opacity='0.7'; btn.disabled=true;}
+  function reset(){ if(btn){btn.innerHTML=orig; btn.style.opacity='1'; btn.disabled=false;} }
   var el=document.getElementById('noticePrintable');
-  var fname='Chauhan_Premium_Notice_'+(_noticeName||'').replace(/[^A-Za-z0-9]+/g,'_');
-  if(window.html2pdf){
-    html2pdf().set({margin:0,filename:fname+'.pdf',image:{type:'jpeg',quality:0.98},
+  var fname='Chauhan_Premium_Notice_'+(_noticeName||'').replace(/[^A-Za-z0-9]+/g,'_')+'.pdf';
+  if(!window.html2pdf){ window.print(); reset(); return; }
+  html2pdf().set({margin:0,image:{type:'jpeg',quality:0.98},
       html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
-      jsPDF:{unit:'pt',format:'a4',orientation:'portrait'}}).from(el).save();
-  } else { window.print(); }
+      jsPDF:{unit:'pt',format:'a4',orientation:'portrait'}})
+    .from(el).outputPdf('blob').then(function(blob){
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download=fname;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },2000);
+      reset();
+    }).catch(function(e){
+      alert('PDF could not be generated here. Opening print view — choose "Save as PDF".');
+      window.print(); reset();
+    });
 }
 document.getElementById('noticeModal').addEventListener('click',function(e){ if(e.target.id==='noticeModal') closeNotice(); });
 function bindNames(){ document.querySelectorAll('a.cname').forEach(function(a){ a.onclick=function(){ openNotice(a.dataset.p); }; }); }
