@@ -249,3 +249,21 @@ textarea.note{width:100%;min-height:64px;border:1px solid var(--line);border-rad
   .tablewrap{max-height:none}
   .kv{grid-template-columns:1fr 1fr}
 }
+
+/* lock screen */
+body.locked .topbar,body.locked .wrap{display:none}
+.gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--navy);background-image:radial-gradient(circle at 30% 20%,#164a78 0,transparent 55%);padding:16px}
+body:not(.locked) .gate{display:none}
+.gate-card{background:#fff;border-radius:16px;padding:30px 28px 24px;width:min(360px,100%);box-shadow:var(--sh-lg);text-align:center;border-top:4px solid var(--brass)}
+.gate-mark{margin:0 auto 12px;width:46px;height:46px;font-size:17px}
+.gate-title{font:600 22px Fraunces,Georgia,serif}
+.gate-sub{font-size:12.5px;color:var(--muted);margin:3px 0 18px}
+.gate-card input[type=password]{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:16px;text-align:center;letter-spacing:3px}
+.gate-card input[type=password]:focus{outline:2px solid #bcd3ee;border-color:var(--blue)}
+.gate-rem{justify-content:center;margin:8px 0 4px}
+.gate-btn{width:100%;padding:11px;font-size:14px;margin-top:4px}
+.gate-err{color:var(--red);font-size:12.5px;min-height:18px;margin-top:8px}
+.gate-card.shake{animation:sh .35s}
+@keyframes sh{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.lockbtn{border:1px solid rgba(255,255,255,.25);background:none;color:rgba(255,255,255,.8);border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer}
+.lockbtn:hover{border-color:var(--brass);color:#fff}

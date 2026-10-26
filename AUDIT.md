@@ -14,7 +14,7 @@ All 14 parse completely and every list ties to LIC's own printed Grand Total. 14
 | 5 | Names from the client sheet used for messages. 62 differ from LIC records; some point at the wrong person (903104594 is RAMBHAJAN Dipchand Chauhan, sheet says Ram Dipchand; 907673533 is CHANDRAPRAKASH, sheet says Chandrakant). | WhatsApp/notice addressed to the wrong family member. |
 | 6 | Instalments were counted by month only, ignoring the commencement day, so premiums not yet due were added (e.g. 903891653 counted 3 on 9 Jul when the third falls due 13 Jul). | Small over-counts on several policies. |
 | 7 | 96 of 149 LIC policies have no phone number in the client sheet (85 of the policies that owe money now). | Most of the book cannot be contacted from the dashboard. |
-| 8 | Client names, phones and policy numbers are on a public GitHub Pages URL. | Privacy exposure; anyone with the link (or a search engine) can read it. `noindex` added; access control still needed. |
+| 8 | Client names, phones and policy numbers are on a public GitHub Pages URL. | Privacy exposure; anyone with the link (or a search engine) can read it. `noindex` added. Fixed: client data is now encrypted (AES-256) behind a password lock; older commits in the repo history still hold plaintext data. |
 | 9 | Data was pasted into the page (217 KB single file) with no way to refresh it. | Every update needed a manual rebuild. |
 
 ## What the page now does
