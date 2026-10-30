@@ -104,9 +104,41 @@ function analyse(p, today) {
   return r;
 }
 
+// ── revenue projection ───────────────────────────────────────────────────────
+// Commission rate (cr) per policy = LIC's printed EstCom / (InstPrem × Due); constant across all 14 lists.
+// Premium-paying term is shorter than policy term for a few plans; everything else pays for the full term.
+const PPT = { '836': { 16: 10, 21: 15, 25: 16 }, '820': { 20: 15 }, '821': { 25: 20 } };
+function lastPremiumDate(p) {
+  const [plan, term] = String(p.pl).split('/').map(Number);
+  const [dd, mm, yy] = String(p.doc).split('/').map(Number);
+  if (!term || !yy) return null;
+  const ppt = (PPT[plan] && PPT[plan][term]) || term;
+  return dueDate(yy * 12 + (mm - 1) + ppt * 12 - STEP[p.md], dd);
+}
+// ST = 2nd/3rd-year premium, paid at a higher rate; from year 4 it falls to the 5% renewal rate.
+function rateOn(p, d) {
+  if (p.fl === 'ST') { const [dd, mm, yy] = p.doc.split('/').map(Number); if (d >= new Date(yy + 3, mm - 1, dd)) return 0.05; }
+  return p.cr || 0;
+}
+// Future instalments (after `from`, up to `to`) a policy will bill if it keeps paying.
+function futureDues(r, from, to) {
+  if (!r.cr || !['upcoming', 'due', 'overdue', 'revival'].includes(r.bucket)) return [];
+  const step = STEP[r.md], day = docDay(r.doc), lp = lastPremiumDate(r), out = [];
+  let i = monthIdx(r.fup), n = 0;
+  const cap = (r.fl === 'MT' || r.fl === 'LP') ? 1 : 999;
+  for (;;) {
+    const d = dueDate(i, day);
+    if (d > to || n >= cap || (lp && d > lp)) break;
+    n++;
+    if (d > from) out.push({ d, amt: r.ip, com: r.ip * rateOn(r, d) });
+    i += step;
+  }
+  return out;
+}
+
 function fmtDate(d) {
   return d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 }
 function inr(n) { return n == null ? '—' : '₹' + Math.round(n).toLocaleString('en-IN'); }
 
-if (typeof module !== 'undefined') module.exports = { analyse, duesUpTo, dueDate, monthIdx, lateFee, STEP, GRACE, MODE_LABEL, fmtDate, inr };
+if (typeof module !== 'undefined') module.exports = { analyse, futureDues, lastPremiumDate, rateOn, duesUpTo, dueDate, monthIdx, lateFee, STEP, GRACE, MODE_LABEL, fmtDate, inr };

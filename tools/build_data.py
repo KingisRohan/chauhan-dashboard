@@ -9,7 +9,8 @@ Usage:
    Each list must tie to LIC's own Grand Total or the build stops.
 2. Policy state comes only from LIC lists: on latest list = unpaid; disappeared within 5 months of its FUP = paid;
    fell off 6+ months after FUP = lapsed; MT/LP flag then paid = completed.
-3. The client roster (exported from the Google Sheet) only supplies phone numbers and client ids.
+3. EstCom / (InstPrem x Due) gives each policy's commission rate (cr), used for the revenue projection.
+4. The client roster (exported from the Google Sheet) only supplies phone numbers and client ids.
 """
 import re,json,glob,os,sys,subprocess,collections
 PDF_DIR,ROSTER=sys.argv[1],sys.argv[2]
@@ -38,7 +39,7 @@ for f in sorted(glob.glob(os.path.join(PDF_DIR,'*Premdue*.pdf'))):
             if not r: sys.exit(f'Unparsed row in {due}: {L}')
             sno,pol,namedoc,pt,mod,fup,flg,ip,dues,gst,tot,com=r.groups()
             dm=re.search(r'(\d\d/\d\d/\d{4})',namedoc); doc=dm.group(1) if dm else ''
-            R.append(dict(list=due,policy=pol,name=re.sub(r'\s+',' ',namedoc.replace(doc,' ')).strip(),doc=doc,plan=pt,mode=mod,fup=fup,flg=flg or '',inst=float(ip),dues=int(dues),tot=int(tot)))
+            R.append(dict(list=due,policy=pol,name=re.sub(r'\s+',' ',namedoc.replace(doc,' ')).strip(),doc=doc,plan=pt,mode=mod,fup=fup,flg=flg or '',inst=float(ip),dues=int(dues),tot=int(tot),com=float(com)))
     s=sum(x['tot'] for x in R[n0:])
     if s!=gt: sys.exit(f'{due}: rows sum {s} != LIC grand total {gt}')
     print(f'{due}: {len(R)-n0} rows, Rs {s} (ties to LIC total)')
@@ -66,7 +67,7 @@ def model():
             if prev is not None and f>prev: pays.append(m)
             prev=f
         o=dict(policy=p,name=L['name'],name_variants=names,doc=L['doc'],plan=L['plan'],mode=L['mode'],frequency=MODEN[L['mode']],inst=L['inst'],
-               flg=L['flg'],last_list=last,last_fup=L['fup'],last_dues=L['dues'],last_tot=L['tot'],first_seen=seen[0],lists_seen=len(seen),payments_observed=len(pays))
+               flg=L['flg'],cr=round(L['com']/(L['inst']*L['dues']),5),last_list=last,last_fup=L['fup'],last_dues=L['dues'],last_tot=L['tot'],first_seen=seen[0],lists_seen=len(seen),payments_observed=len(pays))
         if mi(last)==LAST:
             o['state']='unpaid'; o['fup']=L['fup']
         else:
@@ -116,7 +117,7 @@ for p,o in M.items():
     phone=r.get('phone') or name2phone.get(norm(o['name']),'')
     out.append(dict(p=p,n=title(o['name']),sn=r.get('name',''),cid=r.get('client_id',''),ph=phone,
         pl=o['plan'],md=o['mode'],ip=int(round(o['inst'])),doc=o['doc'],fl=o['flg'],st=state,fup=o['fup'],
-        ll=o['last_list'],ld=o['last_dues'],lt=o['last_tot'],h=hist,lic=1))
+        ll=o['last_list'],ld=o['last_dues'],lt=o['last_tot'],cr=o['cr'],h=hist,lic=1))
 for p,r in D.items():
     if p in M: continue
     m=re.search(r'(\d+)[-/](\d+)',r['plan'])

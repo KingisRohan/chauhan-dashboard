@@ -59,6 +59,7 @@
     <button class="tab on" data-v="queue">Call queue <span class="tab-n" id="nQueue"></span></button>
     <button class="tab" data-v="all">All policies <span class="tab-n" id="nAll"></span></button>
     <button class="tab" data-v="verify">Needs verification <span class="tab-n" id="nVerify"></span></button>
+    <button class="tab" data-v="rev">Revenue <span class="tab-n" id="nRev"></span></button>
     <button class="tab" data-v="log">Call log <span class="tab-n" id="nLog"></span></button>
   </nav>
 
@@ -145,6 +146,39 @@
         <thead><tr><th>Policyholder</th><th>Policy</th><th>Plan / term</th><th>Mode</th><th class="r">Instalment</th><th>Started</th><th>Reading</th><th>Branch says</th></tr></thead>
         <tbody id="vBody"></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- REVENUE -->
+  <section class="view" id="v-rev" hidden>
+    <div class="toolbar">
+      <div class="seg" id="revSeg">
+        <button data-s="book">Paying book only</button>
+        <button data-s="overdue" class="on">+ Overdue recovered</button>
+        <button data-s="revival">+ Lapsed revived</button>
+      </div>
+      <p class="hint grow" id="revNote"></p>
+      <button class="btn ghost" id="revExport" type="button">Export CSV</button>
+    </div>
+    <section class="kpis" id="revKpis"></section>
+    <div class="card split" id="revSplit"></div>
+    <div class="card chart">
+      <div class="card-h"><h3>Your commission by month</h3><span class="muted">hover a month for premium and LIC's share</span></div>
+      <div class="chartbox" id="revChart"></div>
+    </div>
+    <div class="rev-grid">
+      <div class="card">
+        <div class="card-h"><h3>Month by month</h3></div>
+        <div class="tablewrap flat"><table class="grid nohover"><thead><tr><th>Month</th><th class="r">Instalments</th><th class="r">Premium</th><th class="r">LIC's share</th><th class="r">Your commission</th></tr></thead><tbody id="revBody"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Biggest commission at stake</h3><span class="muted">overdue and lapsed, call these first</span></div>
+        <div class="tablewrap flat"><table class="grid"><thead><tr><th>Policyholder</th><th>Status</th><th class="r">Due now</th><th class="r">Commission at stake</th></tr></thead><tbody id="revRisk"></tbody></table></div>
+      </div>
+    </div>
+    <div class="explain rev-explain">
+      <h3>How this is worked out</h3>
+      <p>Each policy's commission rate is taken from LIC's own "EstCom" column on the due lists (5% for most renewals, 6% for some plans, 7.5% on 2nd/3rd-year premiums, falling to 5% from year 4). Every policy is rolled forward on its payment mode until its last premium date. <b>Paying book</b> = paid-up policies plus those due since the latest LIC list whose payment LIC hasn't confirmed yet. <b>Overdue</b> and <b>lapsed</b> only earn if the client pays. Commission is LIC's estimate before TDS; new policies sold from today are not included.</p>
     </div>
   </section>
 

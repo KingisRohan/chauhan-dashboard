@@ -17,7 +17,7 @@
   function load(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.body.appendChild(s); }); }
   async function start() {
     document.body.classList.remove('locked');
-    await load('logic.js'); await load('app.js');
+    await load('logic.js'); await load('app.js'); await load('revenue.js');
   }
 
   $('lockBtn').addEventListener('click', () => { try { localStorage.removeItem(KEY_LS); } catch (_) {} location.reload(); });
