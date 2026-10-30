@@ -3,11 +3,12 @@
 
 (function () {
   const SRC = {
-    book:    { label: 'Paying book',       c: '#1d5fa8', buckets: ['upcoming', 'due'] },
+    book:    { label: 'LIC paying book',   c: '#1d5fa8', buckets: ['upcoming', 'due'] },
+    star:    { label: 'Star Health renewals', c: '#0e9384', buckets: [] },
     overdue: { label: 'Overdue recovered', c: '#c08a2a', buckets: ['overdue'] },
     revival: { label: 'Lapsed, revived',   c: '#8a3fb0', buckets: ['revival'] },
   };
-  const SCEN = { book: ['book'], overdue: ['book', 'overdue'], revival: ['book', 'overdue', 'revival'] };
+  const SCEN = { book: ['book', 'star'], overdue: ['book', 'star', 'overdue'], revival: ['book', 'star', 'overdue', 'revival'] };
   let scen = 'overdue';
 
   const srcOf = r => Object.keys(SRC).find(k => SRC[k].buckets.includes(r.bucket));
@@ -29,6 +30,13 @@
     return { r, src, fut, nowAmt, nowCom,
       futAmt: fut.reduce((s, x) => s + x.amt, 0), futCom: fut.reduce((s, x) => s + x.com, 0) };
   });
+  // Star Health: one renewal a year per policy; lapsed ones only earn if re-issued
+  for (const s of (typeof STAR_ROWS !== 'undefined' ? STAR_ROWS : [])) {
+    const lapsed = s.b === 'lapsed', inWin = !lapsed && s.renewOn > winStart && s.renewOn <= winEnd, now = lapsed || s.renewOn <= winStart;
+    const fut = inWin ? [{ d: s.renewOn, amt: s.prem, com: s.com }] : [];
+    P.push({ star: s, r: { n: s.name, p: s.p, ph: s.ph }, src: lapsed ? 'revival' : 'star', fut,
+      nowAmt: now ? s.prem : 0, nowCom: now ? s.com : 0, futAmt: inWin ? s.prem : 0, futCom: inWin ? s.com : 0 });
+  }
 
   function totals(keys) {
     const sel = P.filter(x => keys.includes(x.src));
@@ -52,20 +60,20 @@
   }
 
   function render() {
-    const keys = SCEN[scen], t = totals(keys), base = totals(['book']), risk = totals(['overdue', 'revival']);
+    const keys = SCEN[scen], t = totals(keys), base = totals(SCEN.book), risk = totals(['overdue', 'revival']);
     document.getElementById('nRev').textContent = '₹' + Math.round(t.futCom / 1000) + 'k';
     const rate = t.futAmt ? (t.futCom / t.futAmt * 100) : 0;
     const range = `${mLabel(MONTHS[0])} – ${mLabel(MONTHS[11])}`;
 
     document.getElementById('revKpis').innerHTML = [
       { c: '#1d5fa8', lbl: 'Premium to collect', tag: range, val: lakh(t.futAmt),
-        sub: `<b>${t.inst}</b> instalments · LIC keeps <b>${lakh(t.futAmt - t.futCom)}</b>` },
+        sub: `<b>${t.inst}</b> instalments and renewals · insurers keep <b>${lakh(t.futAmt - t.futCom)}</b>` },
       { c: 'var(--green)', lbl: 'Your commission', tag: range, val: inr(t.futCom),
         sub: `avg <b>${rate.toFixed(2)}%</b> of premium · about <b>${inr(t.futCom / 12)}</b> a month` },
       { c: 'var(--amber)', lbl: 'Collect now', tag: 'pending today', val: inr(t.nowCom),
         sub: `on <b>${lakh(t.nowAmt)}</b> premium due by month-end (some may already be paid)` },
       { c: '#8a3fb0', lbl: 'Commission at risk', tag: 'overdue + lapsed', val: inr(risk.futCom + risk.nowCom),
-        sub: `<b>${risk.n}</b> policies · lost if these clients don't pay` },
+        sub: `<b>${risk.n}</b> policies (LIC overdue, LIC and Star lapsed)` },
     ].map(c => `<div class="kpi static" style="--c:${c.c}"><div class="kpi-lbl">${c.lbl}<span class="kpi-tag">${c.tag}</span></div>
       <div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
 
@@ -74,16 +82,16 @@
     document.getElementById('revSplit').innerHTML = `
       <div class="split-row"><span>Where each rupee of premium goes</span><span class="muted">${range}</span></div>
       <div class="split-bar"><i style="width:${licPct}%;background:var(--navy)"></i><i style="width:${100 - licPct}%;background:var(--green)"></i></div>
-      <div class="split-row"><span><i class="dot" style="--c:var(--navy)"></i> LIC's share <b>${lakh(t.futAmt - t.futCom)}</b> (${licPct.toFixed(1)}%)</span>
+      <div class="split-row"><span><i class="dot" style="--c:var(--navy)"></i> Insurers' share (LIC + Star) <b>${lakh(t.futAmt - t.futCom)}</b> (${licPct.toFixed(1)}%)</span>
       <span><i class="dot" style="--c:var(--green)"></i> Your commission <b>${inr(t.futCom)}</b> (${(100 - licPct).toFixed(1)}%)</span></div>`;
 
     renderChart(byMonth(keys), keys);
     renderTable(byMonth(keys), t);
     renderRisk();
 
-    const upside = totals(['book', 'overdue', 'revival']).futCom - base.futCom;
+    const upside = totals(SCEN.revival).futCom - base.futCom;
     document.getElementById('revNote').innerHTML =
-      `Paying book alone earns <b>${inr(base.futCom)}</b> over the next 12 months. Bringing every overdue and lapsed client back adds <b>${inr(upside)}</b> a year, ` +
+      `LIC paying book plus Star renewals earn <b>${inr(base.futCom)}</b> over the next 12 months. Bringing every overdue and lapsed client back adds <b>${inr(upside)}</b> a year, ` +
       `plus <b>${inr(risk.nowCom)}</b> on the arrears they settle.`;
   }
 
@@ -122,7 +130,7 @@
         const r = rows[+el.dataset.j];
         tip.innerHTML = `<b>${new Date(Math.floor(r.i / 12), r.i % 12, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b>` +
           keys.filter(k => r.src[k].amt).map(k => `<div><i class="sw" style="background:${SRC[k].c}"></i>${SRC[k].label}<span>${inr(r.src[k].com)}</span></div>`).join('') +
-          `<div class="tip-tot">Commission<span>${inr(r.com)}</span></div><div class="tip-sub">Premium ${inr(r.amt)} · LIC share ${inr(r.amt - r.com)} · ${r.inst} instalments</div>`;
+          `<div class="tip-tot">Commission<span>${inr(r.com)}</span></div><div class="tip-sub">Premium ${inr(r.amt)} · insurers' share ${inr(r.amt - r.com)} · ${r.inst} due</div>`;
         tip.hidden = false;
         const box = host.getBoundingClientRect(), hb = el.getBoundingClientRect();
         let left = hb.left - box.left + hb.width / 2 - 120; left = Math.max(0, Math.min(left, box.width - 240));
@@ -137,26 +145,26 @@
     document.getElementById('revBody').innerHTML = rows.map(r => `<tr>
       <td data-l="Month">${new Date(Math.floor(r.i / 12), r.i % 12, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</td>
       <td data-l="Instalments" class="r">${r.inst}</td><td data-l="Premium" class="r">${inr(r.amt)}</td>
-      <td data-l="LIC's share" class="r">${inr(r.amt - r.com)}</td><td data-l="Your commission" class="r"><b>${inr(r.com)}</b></td></tr>`).join('') +
+      <td data-l="Insurers' share" class="r">${inr(r.amt - r.com)}</td><td data-l="Your commission" class="r"><b>${inr(r.com)}</b></td></tr>`).join('') +
       `<tr class="tot"><td>12 months</td><td class="r">${t.inst}</td><td class="r">${inr(t.futAmt)}</td><td class="r">${inr(t.futAmt - t.futCom)}</td><td class="r"><b>${inr(t.futCom)}</b></td></tr>`;
   }
 
   function renderRisk() {
-    const list = P.filter(x => x.src !== 'book').map(x => Object.assign(x, { stake: x.futCom + x.nowCom }))
+    const list = P.filter(x => ['overdue', 'revival'].includes(x.src)).map(x => Object.assign(x, { stake: x.futCom + x.nowCom }))
       .sort((a, b) => b.stake - a.stake).slice(0, 12);
-    document.getElementById('revRisk').innerHTML = list.map(x => `<tr data-open="${x.r.p}">
+    document.getElementById('revRisk').innerHTML = list.map(x => `<tr data-open="${x.r.p}"${x.star ? ' data-star="1"' : ''}>
       <td data-l="Policyholder"><div class="nm">${esc(x.r.n)}</div><div class="sub">${x.r.p} · ${x.r.ph ? fmtPhone(x.r.ph) : 'no phone'}</div></td>
-      <td data-l="Status"><span class="st ${x.r.bucket}">${BUCKET[x.r.bucket].label}</span></td>
+      <td data-l="Status">${x.star ? `<span class="st s-lapsed">Star · lapsed</span>` : `<span class="st ${x.r.bucket}">${BUCKET[x.r.bucket].label}</span>`}</td>
       <td data-l="Premium due now" class="r">${inr(x.nowAmt)}</td>
-      <td data-l="Commission at stake" class="r"><b>${inr(x.stake)}</b><div class="sub">${inr(x.nowCom)} now · ${inr(x.futCom)} next 12 mo</div></td></tr>`).join('');
-    document.querySelectorAll('#revRisk tr[data-open]').forEach(el => el.onclick = () => openDrawer(el.dataset.open));
+      <td data-l="Commission at stake" class="r"><b>${inr(x.stake)}</b><div class="sub">${inr(x.nowCom)} now · ${inr(x.futCom)} next 12 mo${x.star ? ' · est.' : ''}</div></td></tr>`).join('');
+    document.querySelectorAll('#revRisk tr[data-open]:not([data-star])').forEach(el => el.onclick = () => openDrawer(el.dataset.open));
   }
 
   document.querySelectorAll('#revSeg button').forEach(b => b.onclick = () => { setSeg('revSeg', 's', b.dataset.s); scen = b.dataset.s; render(); });
   document.getElementById('revExport').onclick = () => download(`chauhan_revenue_projection_${stamp()}.csv`, csv(
     P.flatMap(x => x.fut.map(d => ({ x, d }))).sort((a, b) => a.d.d - b.d.d), [
-      ['Due date', o => fmtDate(o.d.d)], ['Policyholder', o => o.x.r.n], ['Policy', o => o.x.r.p], ['Source', o => SRC[o.x.src].label],
+      ['Due date', o => fmtDate(o.d.d)], ['Policyholder', o => o.x.r.n], ['Policy', o => o.x.r.p], ['Insurer', o => o.x.star ? 'Star Health' : 'LIC'], ['Source', o => SRC[o.x.src].label],
       ['Premium', o => o.d.amt], ['Commission rate %', o => (o.d.com / o.d.amt * 100).toFixed(2)], ['Your commission', o => o.d.com.toFixed(2)],
-      ['LIC share', o => (o.d.amt - o.d.com).toFixed(2)]]));
+      ['Insurer share', o => (o.d.amt - o.d.com).toFixed(2)]]));
   render();
 })();

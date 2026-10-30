@@ -12,12 +12,12 @@
   async function open(key) {
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(ENC.iv) }, key, b64(ENC.ct));
     const d = JSON.parse(new TextDecoder().decode(plain));
-    window.META = d.META; window.POLICIES = d.POLICIES;
+    window.META = d.META; window.POLICIES = d.POLICIES; window.STAR = d.STAR || [];
   }
   function load(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.body.appendChild(s); }); }
   async function start() {
     document.body.classList.remove('locked');
-    await load('logic.js'); await load('app.js'); await load('revenue.js');
+    await load('logic.js'); await load('app.js'); await load('star.js'); await load('revenue.js');
   }
 
   $('lockBtn').addEventListener('click', () => { try { localStorage.removeItem(KEY_LS); } catch (_) {} location.reload(); });

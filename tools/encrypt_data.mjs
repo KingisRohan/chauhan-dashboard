@@ -7,8 +7,8 @@ const [src, pw, out = 'data.enc.js'] = process.argv.slice(2);
 if (!src || !pw) { console.error('usage: node tools/encrypt_data.mjs <data.js> <password> [out]'); process.exit(1); }
 
 const g = {};
-new Function('g', readFileSync(src, 'utf8').replace('const META', 'g.META').replace('const POLICIES', 'g.POLICIES'))(g);
-const plain = new TextEncoder().encode(JSON.stringify({ META: g.META, POLICIES: g.POLICIES }));
+new Function('g', readFileSync(src, 'utf8').replace('const META', 'g.META').replace('const POLICIES', 'g.POLICIES').replace('const STAR', 'g.STAR'))(g);
+const plain = new TextEncoder().encode(JSON.stringify({ META: g.META, POLICIES: g.POLICIES, STAR: g.STAR || [] }));
 
 const ITER = 600000;
 const salt = c.getRandomValues(new Uint8Array(16)), iv = c.getRandomValues(new Uint8Array(12));

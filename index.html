@@ -59,6 +59,7 @@
     <button class="tab on" data-v="queue">Call queue <span class="tab-n" id="nQueue"></span></button>
     <button class="tab" data-v="all">All policies <span class="tab-n" id="nAll"></span></button>
     <button class="tab" data-v="verify">Needs verification <span class="tab-n" id="nVerify"></span></button>
+    <button class="tab" data-v="star">Star Health <span class="tab-n" id="nStar"></span></button>
     <button class="tab" data-v="rev">Revenue <span class="tab-n" id="nRev"></span></button>
     <button class="tab" data-v="log">Call log <span class="tab-n" id="nLog"></span></button>
   </nav>
@@ -149,6 +150,29 @@
     </div>
   </section>
 
+  <!-- STAR HEALTH -->
+  <section class="view" id="v-star" hidden>
+    <section class="kpis" id="starKpis"></section>
+    <div class="toolbar">
+      <div class="search"><input id="sSearch" type="search" placeholder="Search name, policy or product"></div>
+      <div class="seg" id="sSeg">
+        <button data-s="open" class="on">Needs action</button>
+        <button data-s="renewed">Renewed</button>
+        <button data-s="later">Upcoming</button>
+        <button data-s="all">All</button>
+      </div>
+      <button class="btn ghost" id="sExport" type="button">Export CSV</button>
+    </div>
+    <p class="hint" id="sCount"></p>
+    <div class="tablewrap">
+      <table class="grid nohover">
+        <thead><tr><th>Policyholder</th><th>Policy</th><th class="r">Cover</th><th>Renewal date</th><th class="r">Premium</th><th>Status</th><th></th></tr></thead>
+        <tbody id="sBody"></tbody>
+      </table>
+    </div>
+    <p class="hint">From Star Health's "Renewed &amp; Non-Renewed" agent report, pulled 30 Oct 2026. "Star quote" = renewal premium Star has already issued; "est." = last year's premium (Star usually adds an age loading). Grace period is 30 days; after that the cover breaks and waiting periods restart.</p>
+  </section>
+
   <!-- REVENUE -->
   <section class="view" id="v-rev" hidden>
     <div class="toolbar">
@@ -163,13 +187,13 @@
     <section class="kpis" id="revKpis"></section>
     <div class="card split" id="revSplit"></div>
     <div class="card chart">
-      <div class="card-h"><h3>Your commission by month</h3><span class="muted">hover a month for premium and LIC's share</span></div>
+      <div class="card-h"><h3>Your commission by month</h3><span class="muted">hover a month for premium and insurers' share</span></div>
       <div class="chartbox" id="revChart"></div>
     </div>
     <div class="rev-grid">
       <div class="card">
         <div class="card-h"><h3>Month by month</h3></div>
-        <div class="tablewrap flat"><table class="grid nohover"><thead><tr><th>Month</th><th class="r">Instalments</th><th class="r">Premium</th><th class="r">LIC's share</th><th class="r">Your commission</th></tr></thead><tbody id="revBody"></tbody></table></div>
+        <div class="tablewrap flat"><table class="grid nohover"><thead><tr><th>Month</th><th class="r">Due</th><th class="r">Premium</th><th class="r">Insurers' share</th><th class="r">Your commission</th></tr></thead><tbody id="revBody"></tbody></table></div>
       </div>
       <div class="card">
         <div class="card-h"><h3>Biggest commission at stake</h3><span class="muted">overdue and lapsed, call these first</span></div>
@@ -178,7 +202,7 @@
     </div>
     <div class="explain rev-explain">
       <h3>How this is worked out</h3>
-      <p>Each policy's commission rate is taken from LIC's own "EstCom" column on the due lists (5% for most renewals, 6% for some plans, 7.5% on 2nd/3rd-year premiums, falling to 5% from year 4). Every policy is rolled forward on its payment mode until its last premium date. <b>Paying book</b> = paid-up policies plus those due since the latest LIC list whose payment LIC hasn't confirmed yet. <b>Overdue</b> and <b>lapsed</b> only earn if the client pays. Commission is LIC's estimate before TDS; new policies sold from today are not included.</p>
+      <p>Each policy's commission rate is taken from LIC's own "EstCom" column on the due lists (5% for most renewals, 6% for some plans, 7.5% on 2nd/3rd-year premiums, falling to 5% from year 4). Every policy is rolled forward on its payment mode until its last premium date. <b>Paying book</b> = paid-up policies plus those due since the latest LIC list whose payment LIC hasn't confirmed yet. <b>Overdue</b> and <b>lapsed</b> only earn if the client pays. <b>Star Health</b>: each policy renews once a year at its quoted (or last year's) premium; commission is estimated at 15% until a Star commission statement is added. Commission is before TDS; new policies sold from today are not included.</p>
     </div>
   </section>
 
