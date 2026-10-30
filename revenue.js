@@ -156,7 +156,7 @@
       <td data-l="Policyholder"><div class="nm">${esc(x.r.n)}</div><div class="sub">${x.r.p} · ${x.r.ph ? fmtPhone(x.r.ph) : 'no phone'}</div></td>
       <td data-l="Status">${x.star ? `<span class="st s-lapsed">Star · lapsed</span>` : `<span class="st ${x.r.bucket}">${BUCKET[x.r.bucket].label}</span>`}</td>
       <td data-l="Premium due now" class="r">${inr(x.nowAmt)}</td>
-      <td data-l="Commission at stake" class="r"><b>${inr(x.stake)}</b><div class="sub">${inr(x.nowCom)} now · ${inr(x.futCom)} next 12 mo${x.star ? ' · est.' : ''}</div></td></tr>`).join('');
+      <td data-l="Commission at stake" class="r"><b>${inr(x.stake)}</b><div class="sub">${inr(x.nowCom)} now · ${inr(x.futCom)} next 12 mo</div></td></tr>`).join('');
     document.querySelectorAll('#revRisk tr[data-open]:not([data-star])').forEach(el => el.onclick = () => openDrawer(el.dataset.open));
   }
 

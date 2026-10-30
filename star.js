@@ -1,7 +1,7 @@
 // star.js — Star Health renewals (the "Star Health" tab). Data: STAR, from the Star agent portal's
 // "Renewed & Non-Renewed" report. Health policies renew yearly; 30-day grace after expiry, then the cover breaks.
 
-const STAR_RATE = 0.15;   // estimated renewal commission until a Star commission statement is added
+const STAR_RATE = 0.14;   // Star Health renewal commission rate (confirmed by Rohan, Oct 2026)
 const STAR_GRACE = 30;
 const dmy = s => { if (!s) return null; const [d, m, y] = s.split('/').map(Number); return new Date(y, m - 1, d); };
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -51,7 +51,7 @@ const STAR_RANK = { grace: 1, due: 2, lapsed: 3, soon: 4, later: 5, renewed: 6 }
       { c: 'var(--amber)', lbl: 'Renewals in next 60 days', val: inr(sum(in60, r => r.prem)), sub: `<b>${in60.length}</b> policies · <b>${in60.filter(r => r.quoted).length}</b> already quoted by Star` },
       { c: 'var(--red)', lbl: 'In grace or lapsed', val: inr(sum(gr.concat(lp), r => r.prem)), sub: `<b>${gr.length}</b> in grace · <b>${lp.length}</b> lapsed (cover broken)` },
       { c: 'var(--green)', lbl: 'Renewed this cycle', val: inr(sum(rn, r => r.prem)), sub: `<b>${rn.length}</b> of ${STAR_ROWS.length} policies` },
-      { c: '#0e9384', lbl: 'Est. commission, 12 months', tag: 'est. ' + STAR_RATE * 100 + '%', val: inr(sum(STAR_ROWS.filter(r => r.b !== 'lapsed'), r => r.com)), sub: `if every live policy renews once` },
+      { c: '#0e9384', lbl: 'Your commission, 12 months', tag: Math.round(STAR_RATE * 100) + '%', val: inr(sum(STAR_ROWS.filter(r => r.b !== 'lapsed'), r => r.com)), sub: `if every live policy renews once` },
     ].map(c => `<div class="kpi static" style="--c:${c.c}"><div class="kpi-lbl">${c.lbl}${c.tag ? `<span class="kpi-tag">${c.tag}</span>` : ''}</div>
       <div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
     $('sCount').textContent = `${list.length} policies · ${inr(sum(list, r => r.prem))} premium`;
